@@ -162,7 +162,11 @@ def create_stock_data(df_open,df_close,st,m=240):
     return np.array(st_train_data),np.array(st_test_data) 
 
 def scalar_normalize(train_data, test_data):
-    # Replace infinity values with NaN
+    # Convert to numeric types, coercing errors to NaN
+    train_data = np.array(pd.DataFrame(train_data).apply(pd.to_numeric, errors='coerce'))
+    test_data = np.array(pd.DataFrame(test_data).apply(pd.to_numeric, errors='coerce'))
+    
+    # Replace infinite values with NaN
     train_data[np.isinf(train_data)] = np.nan
     test_data[np.isinf(test_data)] = np.nan
     
