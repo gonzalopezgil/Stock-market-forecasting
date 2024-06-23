@@ -12,19 +12,6 @@ os.environ['PYTHONHASHSEED']=str(SEED)
 random.seed(SEED)
 np.random.seed(SEED)
 
-# Setting up GPU configuration
-gpus = tf.config.experimental.list_physical_devices('GPU')
-if gpus:
-    try:
-        # Currently, memory growth needs to be the same across GPUs
-        for gpu in gpus:
-            tf.config.experimental.set_memory_growth(gpu, True)
-        tf.config.experimental.set_virtual_device_configuration(
-            gpus[0],
-            [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=4096)])  # set memory limit if necessary
-    except RuntimeError as e:
-        print(e)
-
 SP500_df = pd.read_csv('data/SPXconst.csv')
 all_companies = list(set(SP500_df.values.flatten()))
 all_companies.remove(np.nan)
@@ -33,7 +20,7 @@ constituents = {'-'.join(col.split('/')[::-1]):set(SP500_df[col].dropna())
                 for col in SP500_df.columns}
 
 constituents_train = {} 
-for test_year in range(1993,2016):
+for test_year in range(2003,2024):
     months = [str(t)+'-0'+str(m) if m<10 else str(t)+'-'+str(m) 
               for t in range(test_year-3,test_year) for m in range(1,13)]
     constituents_train[test_year] = [list(constituents[m]) for m in months]
@@ -116,7 +103,7 @@ for directory in [result_folder]:
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-for test_year in range(1993,2020):
+for test_year in range(2003,2024):
     
     print('-'*40)
     print(test_year)
