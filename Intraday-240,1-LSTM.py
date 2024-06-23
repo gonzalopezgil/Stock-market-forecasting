@@ -3,26 +3,23 @@ import numpy as np
 import random
 import time
 import pickle
-from sklearn.preprocessing import OneHotEncoder, RobustScaler
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import RobustScaler
 from Statistics import Statistics
 
 import tensorflow as tf
-from tensorflow.keras.layers import CuDNNLSTM, Dropout, Dense, Input
-from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, CSVLogger
-from tensorflow.keras.models import Model, load_model
+from tensorflow.keras.layers import CuDNNLSTM, Dropout,Dense,Input,add
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, CSVLogger, LearningRateScheduler
+from tensorflow.keras.models import Model, Sequential, load_model
 from tensorflow.keras import optimizers
 import warnings
 warnings.filterwarnings("ignore")
 
 import os
 SEED = 9
-os.environ['PYTHONHASHSEED'] = str(SEED)
+os.environ['PYTHONHASHSEED']=str(SEED)
 random.seed(SEED)
 np.random.seed(SEED)
-tf.random.set_seed(SEED)
-
-# Load your data
-
 
 # Setting up GPU configuration
 gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -36,7 +33,6 @@ if gpus:
             [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=4096)])  # set memory limit if necessary
     except RuntimeError as e:
         print(e)
-
 
 SP500_df = pd.read_csv('data/SPXconst.csv')
 all_companies = list(set(SP500_df.values.flatten()))
@@ -205,19 +201,20 @@ for test_year in range(1993,2020):
     scalar_normalize(train_data,test_data)
     print(train_data.shape,test_data.shape,time.time()-start)
     
-    model, predictions = trainer(train_data, test_data)
-    returns = simulate(test_data, predictions)
-    returns.to_csv(result_folder + '/avg_daily_rets-' + str(test_year) + '.csv')
+    model,predictions = trainer(train_data,test_data)
+    returns = simulate(test_data,predictions)
+    returns.to_csv(result_folder+'/avg_daily_rets-'+str(test_year)+'.csv')
     
     result = Statistics(returns.sum(axis=1))
     print('\nAverage returns prior to transaction charges')
     result.shortreport() 
     
-    with open(result_folder + "/avg_returns.txt", "a") as myfile:
-        res = '-' * 30 + '\n'
+    with open(result_folder+"/avg_returns.txt", "a") as myfile:
+        res = '-'*30 + '\n'
         res += str(test_year) + '\n'
         res += 'Mean = ' + str(result.mean()) + '\n'
-        res += 'Sharpe = ' + str(result.sharpe()) + '\n'
-        res += '-' * 30 + '\n'
+        res += 'Sharpe = '+str(result.sharpe()) + '\n'
+        res += '-'*30 + '\n'
         myfile.write(res)
         
+
