@@ -161,11 +161,26 @@ def create_stock_data(df_open,df_close,st,m=240):
     st_test_data = st_data[trade_year==str(test_year)]
     return np.array(st_train_data),np.array(st_test_data) 
 
-def scalar_normalize(train_data,test_data):
+def scalar_normalize(train_data, test_data):
+    # Replace infinity values with NaN
+    train_data[np.isinf(train_data)] = np.nan
+    test_data[np.isinf(test_data)] = np.nan
+    
+    # Extract the columns to be normalized
+    train_features = train_data[:, 2:-2]
+    test_features = test_data[:, 2:-2]
+    
+    # Initialize scaler
     scaler = RobustScaler()
-    scaler.fit(train_data[:,2:-2])
-    train_data[:,2:-2] = scaler.transform(train_data[:,2:-2])
-    test_data[:,2:-2] = scaler.transform(test_data[:,2:-2])
+    
+    # Fit the scaler on the non-NaN values of the training data
+    scaler.fit(train_features[~np.isnan(train_features).any(axis=1)])
+    
+    # Transform the data, ignoring NaNs during the process
+    train_data[:, 2:-2] = np.where(np.isnan(train_features), np.nan, scaler.transform(train_features))
+    test_data[:, 2:-2] = np.where(np.isnan(test_features), np.nan, scaler.transform(test_features))
+    
+    return train_data, test_data
     
 
 model_folder = 'models-Intraday-240-1-LSTM'
@@ -198,7 +213,7 @@ for test_year in range(1993,2018):
     train_data = np.concatenate([x for x in train_data])
     test_data = np.concatenate([x for x in test_data])
     
-    scalar_normalize(train_data,test_data)
+    train_data, test_data = scalar_normalize(train_data, test_data)
     print(train_data.shape,test_data.shape,time.time()-start)
     
     model,predictions = trainer(train_data,test_data)
